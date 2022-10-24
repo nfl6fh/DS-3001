@@ -38,7 +38,7 @@ I should note that the labels on this dataset were completely anatomized so I ha
 
 ```{r}
 #Let's load in our data
-loan_data <- read_csv('data/japan_credit.csv')
+loan_data <- read_csv('~/DS-3001/data/japan_credit.csv')
 #Take a look
 
 str(loan_data)
@@ -120,7 +120,7 @@ column_index
 
 loan_pred[,c(1,6,8,9,12)] <- lapply(loan_pred[,c(1,6,8,9,12)], as.factor)
 
-View(loan_pred)
+# View(loan_pred)
 
 str(loan_pred)
 
@@ -135,7 +135,6 @@ loan_pred <- as.tibble(loan_pred)#converting back to a tibble for the normalizin
 
 #Need to load/run the function from the ML Bootcamp
 loan_pred[abc] <- lapply(loan_pred[abc], normalize)
-
 str(loan_pred)
 
 ```
@@ -167,21 +166,21 @@ dim(test)
 ```{r}
 #implementing a parallel processes structure, with the 4 cores available on my CPU. 
 
-#install.packages("foreach")#library that caret uses to do implement the processing 
+# install.packages("foreach")#library that caret uses to do implement the processing
 
-#install.packages("doParallel")#package that registers the cores
-#library(doParallel)
+# install.packages("doParallel")#package that registers the cores
+library(doParallel)
 
-#cl <- makePSOCKcluster(4)#registers the cores
+cl <- makePSOCKcluster(4)#registers the cores
 
-#registerDoParallel(cl)
+registerDoParallel(cl)
 set.seed(1984)
 loan_tree <- train(outcome~., #model formula everything used to classify outcome
                    data=train_data, #use the training data
                    method='rpart',# indicates the use of tree based model
                    na.action = na.omit)#omitting the missing values
 
-#stopCluster(cl)
+stopCluster(cl)
 
 
                    
@@ -190,7 +189,7 @@ loan_tree #let's take a look, pretty good, accuracy is at roughly 84%, not bad. 
 loan_tree
 #Quick overview of how bootstrapping works. 
 xx <- tibble(loan_tree$resample)
-View(xx) 
+# View(xx) 
 
 mean(xx$Accuracy)
 
@@ -214,7 +213,7 @@ loan_eval <-(predict(loan_tree,newdata = test))#generates 1s and 0s
 head(loan_eval,50)
 
 loan_eval_prob <- predict(loan_tree, newdata = test, type = "prob")#this gives us the predicted prob, we will need these later for the fairness evaluation
-View(loan_eval_prob)
+# View(loan_eval_prob)
 
 
 table(loan_eval, test$outcome)#essential the confusion matrix, though we can make a fancy one using caret built in functions
@@ -238,32 +237,32 @@ densityplot(loan_eval_prob$`1`)#Why does this look the way it does?
 adjust_thres(loan_eval_prob$`1`,.50, test$outcome) #Not much changes here because of the high probability splits of the data outcomes. Let's take a closer look. We can see that the algo isn't marginally mis-classifying these rows, it's very confidently wrong. Which likely means that there's too much emphasis being placed on too small a number of variables, principally the funfetti variable. 
 loan_eval_prob$test <- test$outcome
 
-View(loan_eval_prob)
+# View(loan_eval_prob)
 
 ```
 
 ### ROC/AUC
 ```{r}
 #In order to use most evaluation packages it's just easier to have are predictions and targets in one place. 
-View(loan_eval)
+# View(loan_eval)
 loan_eval <- tibble(pred_class=loan_eval, pred_prob=loan_eval_prob$`1`,target=test$outcome)
 
 
-View(loan_eval)
+# View(loan_eval)
 
 index_poss <- apply(loan_eval,2, function(x) loan_eval$pred_class==loan_eval$target)
 
-View(index_poss)
+# View(index_poss)
 
 
 pred <- prediction(loan_eval$pred_prob,loan_eval$target)
-View(pred)
+# View(pred)
 
 tree_perf <- performance(pred,"tpr","fpr")
 #Essentially creates x and y values in the form of true poss and true neg
 #rates at each threshold
 
-View(tree_perf)
+# View(tree_perf)
 
 plot(tree_perf, colorize=TRUE)
 abline(a=0, b= 1)

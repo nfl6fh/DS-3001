@@ -36,8 +36,8 @@ CART Example using rpart: Use a new Dataset binary and doing three data
 partitions: Training, Tuning and Testing
 ```{r}
 
-winequality <- read.csv("data/winequality-red-ddl.csv")
-View(winequality)
+winequality <- read.csv("~/DS-3001/data/winequality-red-ddl.csv")
+# View(winequality)
 str(winequality)
 table(winequality$text_rank)
 
@@ -63,6 +63,11 @@ str(winequality)
 ## Collapsing the target
 ```{r}
 table(winequality$text_rank)
+
+# winequality1 = winequality 
+# winequality1$text_rank = as.factor(winequality$text_rank)
+
+# histogram(winequality1$text_rank)
 
 
 winequality$text_rank <- fct_collapse(winequality$text_rank,
@@ -113,7 +118,7 @@ dim(tune)
 # Choose the features and classes, slightly different approach for caret, need to create features and target sets from the training data.
 
 features <- train[,-12]#dropping 12 because it's target variable. 
-View(features)
+# View(features)
 target <- train$text_rank
 
 str(features)
@@ -199,7 +204,7 @@ wine_pred_tune = predict(wine_mdl,tune,tune$text_rank, type= "prob")#probabiliti
 
 wine_pred_tune_labels = predict(wine_mdl,tune,tune$text_rank,type = "raw")#Labels
 
-View(as_tibble(wine_pred_tune_labels))
+# View(as_tibble(wine_pred_tune_labels))
 
 #Lets use the confusion matrix
 wine_eval <- caret::confusionMatrix(wine_pred_tune_labels, 
@@ -270,7 +275,7 @@ str(train_1)
 features_3 <- train_1[,-11]
 target_1 <- train_1$text_rank
 
-View(features_3)
+# View(features_3)
 
 set.seed(1984)
 wine_mdl_2 <- train(x=features_3,
@@ -305,10 +310,10 @@ predictandCM(wine_mdl_2,test_1,"raw",test_1$text_rank)
 
 ## Another example using just the rpart without the caret wrapper
 ```{r}
-tree_example <- tibble(import("data/pregnancy.csv", check.names= TRUE))
+tree_example <- tibble(import("~/DS-3001/data/pregnancy.csv", check.names= TRUE))
 
 describe(tree_example)
-View(tree_example)
+# View(tree_example)
 str(tree_example)
 
 #We want to build a classifier that can predict whether a shopper is pregnant based on the items they buy so we can direct-market to that customer if possible. 
@@ -334,8 +339,8 @@ tree_example_long = tree_example %>% gather(Var, #<- list of predictor variables
                                 Value,#<- the values of those predictor variables
                                 -PREGNANT)  #<- the column to gather the data by
 
-View(tree_example)
-View(tree_example_long)
+# View(tree_example)
+# View(tree_example_long)
 
 ```
 
@@ -355,7 +360,7 @@ tree_example_long_form = ddply(tree_example_long,
 
 #?ddply
 
-View(tree_example_long_form)
+# View(tree_example_long_form)
 ```
 
 #Build  the model using rpart and CART Algo (Gini Index - Binary Tree)
@@ -396,7 +401,7 @@ tree_example_tree_gini = rpart(PREGNANT~.,  #<- formula, response variable ~ pre
 #Look at the results
 tree_example_tree_gini
 
-View(tree_example_tree_gini$frame)
+# View(tree_example_tree_gini$frame)
 
 # dev - the deviance or the total sum of squares within the node, so if
 #       you divide this by the sample size in each node you get the variance
@@ -413,7 +418,7 @@ rpart.plot(tree_example_tree_gini, type =4, extra = 101)#package rpart.plot
 
 #The "cptable" element includes the optimal prunnings based on the complexity parameter.
 
-View(tree_example_tree_gini$cptable)
+# View(tree_example_tree_gini$cptable)
 
 plotcp(tree_example_tree_gini)#Produces a "elbow chart" for various cp values
 
@@ -433,7 +438,7 @@ str(cptable_ex)
 
 cptable_ex$opt <- cptable_ex$`rel error`+ cptable_ex$xstd
 
-View(cptable_ex)
+# View(cptable_ex)
 
 # Ok so let's compare the cptable_ex, the cpplot and the decision tree plot, 
 # they all covered around 8ish splits of the tree or a cp of .014ish. 
@@ -469,10 +474,10 @@ dev.off()
 # evaluate the accuracy of the results.
 tree_example_fitted_model = predict(tree_example_tree_gini, type= "class")
 
-View(as.data.frame(tree_example_fitted_model))
+# View(as.data.frame(tree_example_fitted_model))
 
 #tree_example_fitted_model <- as.numeric(tree_example_fitted_model)
-View(tree_example_fitted_model)
+# View(tree_example_fitted_model)
 
 # Let's compare the results to the actual data.
 preg_conf_matrix = table(tree_example_fitted_model, tree_example$PREGNANT)
@@ -531,7 +536,7 @@ plot(preg_roc)
 #We can adjust using a if else statement and the predicted prob
 
 tree_example_fitted_prob = predict(tree_example_tree_gini, type= "prob")
-View(tree_example_fitted_prob)
+# View(tree_example_fitted_prob)
 
 #Let's 
 roc(tree_example$PREGNANT, ifelse(tree_example_fitted_prob[,'not_preg'] >= .25,0,1), plot=TRUE)
@@ -551,16 +556,16 @@ tree_example_tree_cp2 = rpart(PREGNANT~.,#<- formula, response variable ~ predic
 
 plotcp(tree_example_tree_cp2)
 
-View(tree_example_tree_cp2)
+# View(tree_example_tree_cp2)
 
 rpart.plot(tree_example_tree_cp2, type =4, extra = 101)
 
 cptable_ex_cp <- as.data.frame(tree_example_tree_cp2$cptable, )
-View(cptable_ex_cp)
+# View(cptable_ex_cp)
 
 cptable_ex_cp$opt <- cptable_ex_cp$`rel error`+ cptable_ex_cp$xstd
 
-View(cptable_ex_cp)
+# View(cptable_ex_cp)
 
 #Change the rpart.control and take a look at results.
 
