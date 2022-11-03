@@ -1,0 +1,141 @@
+---
+title: "Eval_Lab"
+author: "Nathan Lindley"
+date: "10/13/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The most important part of any machine learning model(or any model, really) is understanding and defining the models weaknesses and/or vulnerabilities. 
+
+To do so we are going to practice on a familiar dataset and use a method we just learned, kNN. For this lab use the Job Placement or Bank dataset.  
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(dplyr)
+library(caret)
+library(RColorBrewer)
+library(ROCR)
+#install.packages("MLmetrics")
+library(MLmetrics)
+library(mltools)
+library(data.table)
+```
+
+Part 1. Develop a ML question using status as the target variable. In consideration of all the metrics we discussed what are a couple of key metrics that should be tracked given the question you are trying to solve?
+
+How well we can predict whether someone gets placed or not. Metrics to be tracked would be the log loss, and the accuracy.
+
+Part 2. Create a kNN model that can answer your question, using all the 
+appropriate prep methods we discussed.
+
+```{r}
+df <- read_csv("~/DS-3001/myWork/Placement_Data_Full_Class.csv")
+# Data Prep
+df <- select(df, -salary)
+df <- df[complete.cases(df),]
+table(df$specialisation)
+df$workex <- recode(df$workex, 'Yes' = 1, 'No' = 0)
+df$status <- recode(df$status, 'Placed' = 1, 'Not Placed' = 0)
+factor_columns <- c(2,4,6,7,9,10,12)
+df[,factor_columns] <- lapply(df[,factor_columns], as_factor)
+str(df)
+factor_column_names <- names(select_if(df, is.factor))
+df <- one_hot(as.data.table(df), cols=factor_column_names)
+df$status = as.factor(df$status)
+```
+
+```{r}
+# Decision Tree
+colnames(df) <- make.names(colnames(df))
+split_index <- createDataPartition(df$status, p = .8, #selects the split, 80% training 20% for test 
+                                  list = FALSE,#output of the data, we don't want a list
+                                  times = 1)#the number of partitions to create we just want one
+
+traindf <- df[split_index,]
+dim(traindf)
+
+test <- df[-split_index,]
+dim(test)
+
+set.seed(2002)
+status_tree <- train(status~., data=traindf, method='rpart')
+
+status_tree
+
+resamples <- tibble(status_tree$resample)
+
+mean(resamples$Accuracy)
+status_tree$finalModel$variable.importance
+```
+
+Part 3. Evaluate the model using the metrics you identified in the first question. Make sure to calculate/reference the prevalence to provide a baseline for some of these measures. Summarize the output of the key metrics you established in part 1. 
+
+```{r}
+# Prediction and evaluation
+status_eval <- predict(status_tree, newdata=test)
+status_eval
+
+status_eval_prob <- predict(status_tree, newdata=test, type='prob')
+status_eval_prob
+
+table(status_eval, test$status)
+
+confusionMatrix(status_eval, test$status, positive='1', dnn=c('Prediction','Actual'), mode='everything')
+
+densityplot(status_eval_prob$'1')
+
+full_pred <- tibble(pred_class=status_eval, pred_prob=status_eval_prob$'1', target=test$status)
+
+index_poss <- apply(full_pred, 2, function(x) full_pred$pred_class==full_pred$target)
+
+pred <- prediction(full_pred$pred_prob, full_pred$target)
+
+tree_perf <- performance(pred, 'tpr', 'fpr')
+plot(tree_perf)
+abline(a=0,b=1)
+
+tree_perf_AUC <- performance(pred,"auc")
+print(tree_perf_AUC@y.values)
+
+## LogLoss
+
+LogLoss(full_pred$pred_prob, as.numeric(test$status))
+
+table(test$status)
+
+29/42
+-log(29/42)
+
+#pretty terrible model based on this metric
+```
+
+Based on the metrics established in part 1 my model is not significantly better than guessing, the logloss score is very rough. I'm getting 1.66 versus a baseline of 0.37. As for the accuracy score I'm getting 71% versus a prevalence of 69% so a 2% increase in accuracy.
+
+Part 4.  Consider where miss-classification errors (via confusion matrix) are occurring, is there a pattern? If so discuss this pattern and why you think this is the case. 
+
+There doesn't appear to be a pattern as to who is classified incorrectly, at least not a pattern I could discern from looking through the data.
+
+Part 5. Based on your exploration in Part 4, change the threshold using the function provided in the in-class example, what differences do you see in the evaluation metrics? Speak specifically to the metrics that are best suited to address the question you are trying to answer from part 1. 
+
+```{r}
+adjust_thres <- function(x, y, z) {
+  #x=pred_probablities, y=threshold, z=test_outcome
+  thres <- as.factor(ifelse(x > y, 1,0))
+  confusionMatrix(thres, z, positive = "1", dnn=c("Prediction", "Actual"), mode = "everything")
+}
+
+adjust_thres(status_eval_prob$'1', .45, test$status)
+```
+
+Based on both the density plot and some experimentation with the `adjust_thres` function I was unable to find any thresdhold value that significantly increased my algorithm's accuracy score.
+
+Part 6. Summarize your findings (a paragraph or two) speaking through your question, what does the evaluation outputs mean when answering the question you've proposed?
+
+My question was an exploratory question into how accurate of an algorithm I could create for predicting whether someone would be placed into a job or not based on the data provided. Ultimately, based on the evaluation metrics I chose to focus on my algorithm was unable to reliably predict placement with a significant increase in accuracy over random guessing. There was only a 2% difference between my model's accuracy rate and the prevalence in my testing data set. This was pretty disappointing to me as I also was unable to find any trend in the misclassified data that could help me to understand why my model made incorrect predictions. 
+
+Submit a .Rmd file along with the data used or access to the data sources to the Collab site. You can work together with your groups but submit individually and generate your own R file. 
+

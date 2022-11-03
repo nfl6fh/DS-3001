@@ -1,0 +1,72 @@
+---
+title: 'Assignment 2'
+author: 'Nathan Lindley'
+date: '9/15/2022'
+format: 
+    html:
+        theme: cosmo
+        toc: true
+        toc-location: left
+        number-sections: true
+---
+
+# Article
+
+## Article Link
+
+[A Beginner’s Guide to Data Engineering — Part I](https://medium.com/@rchang/a-beginners-guide-to-data-engineering-part-i-4227c5c457d7)
+
+## Summary of Article
+
+This article focuses on how the majority of the work that a data scientist does in their day-to-day job is data engineering and cleaning. The author explains that many young data scientists (themself included) had aspirations of creating large and elaborate projects and visualizations using data but unfortunately they ended up doing the more mundane and less glamorous task of data cleaning. Much of the cirriculum that is available teaches us how to work with data that has already been cleaned and made easy to work with. Contrary to this the real-world is full of sensor data and other more 'raw' forms of data that need to be cleaned before they're able to be worked with. 
+
+## About the Author
+
+Robert Chang has a Masters Degree in Statistics and does data science for airbnb. He previously did data science for twitter.
+
+## Image From Article
+
+<img width=75% src="https://miro.medium.com/max/1400/1*2XybEH3eav63pBIu-tlRlw.png"/>
+
+
+## More Information
+
+::: {.panel-tabset}
+
+### Related Articles
+
+[ETL (Extract, Transform, Load) - (IBM)](https://www.ibm.com/cloud/learn/etl)
+
+[ETL (Extract, Transform, Load) - (DataBricks)](https://www.databricks.com/glossary/extract-transform-load)
+
+
+### Most Useful Things from the Article
+
+* The author explains that the majority of the work that a data scientist does in their day-to-day job is data engineering and cleaning.
+* There is much more data cleaning than data science in the real world.
+* Three main steps of data engineering: Extract, Transform, Load (ETL)
+
+:::
+
+# Plot
+
+```{r}
+#| echo: true
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(ggplot2)
+library(plotly)
+```
+
+```{r}
+#| echo: true
+
+plot = ggplot(sleep, aes(x=group, y=extra)) +
+  geom_boxplot() +
+  labs(title="Extra Sleep by Group", x="Group", y="Extra Sleep (hours)") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+ggplotly(plot)
+```

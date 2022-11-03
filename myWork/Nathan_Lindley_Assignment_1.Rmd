@@ -1,0 +1,212 @@
+---
+title: 'Class 2 Assignment'
+author: 'Nate Lindley'
+date: '9/1/2022'
+output: 
+  html_document: 
+    toc: yes
+    toc_float: yes
+    number_sections: yes
+---
+
+# Dataset 1 (beaches.csv)
+
+```{r}
+library(tidyr)
+library(dplyr)
+beaches <- read.csv('~/DS-3001/data/beaches.csv')
+head(beaches)
+# summary(beaches)
+```
+## Quesiton 1
+
+### Question
+
+What temperature does the most rainfall happen at?
+
+### Psuedocode
+
+1) mutate column for temp rounded to nearest 5
+2) group by temp (rounded to nearest 5)
+3) average rainfall
+4) remove NA's (set to 0 since that's what they represent)
+5) sort descending
+
+### Single Line Code
+
+```{r}
+beaches1 = mutate(beaches, temp5 = 5* round(beaches$temperature/5))
+
+beaches2 = group_by(beaches1, temp5) %>%
+  summarize(avg_rainfall = mean(rainfall))
+
+beaches3 = na.omit(beaches2)
+
+beaches4 = arrange(beaches3, -avg_rainfall)
+
+head(beaches4)
+```
+
+### Function
+
+```{r}
+avg_rainfall = function(df) {
+  mutate(df, temp5 = 5* round(beaches$temperature/5)) %>%
+    group_by(temp5) %>%
+    summarize(avg_rainfall = mean(rainfall)) %>%
+    na.omit() %>%
+    arrange(-avg_rainfall)
+}
+
+beaches_func = avg_rainfall(beaches)
+head(beaches_func)
+```
+
+## Question 2
+
+### Question
+
+For this one I removed some columns of the dataset, the split up date columns,
+and will go through the steps to recreate them.
+
+```{r}
+beaches_stripped = select(beaches,-c('day', 'month', 'year'))
+```
+
+### Psuedocode
+
+1) split after the year
+2) remove the dash before the month digits
+3) split after month
+4) remove dash before day digits
+5) cast all three columns to numeric
+
+### Single Line Code
+
+```{r}
+beach1 = separate(beaches_stripped, date, c('Year', 'mm-dd'), sep=4, remove=FALSE)
+
+beach2 = separate(beach1, 'mm-dd', c('_', 'mm-dd'), sep=1)
+
+beach3 = select(beach2, -'_')
+
+beach4 = separate(beach3, 'mm-dd', c('Month','-dd'), sep=2)
+
+beach5 = separate(beach4, '-dd', c('_', 'Day'), sep=1)
+
+beach6 = select(beach5, -'_')
+
+num_cols = c('Year','Month','Day')
+
+beach6[num_cols] = sapply(beach6[num_cols], as.numeric)
+```
+
+### Function
+
+```{r}
+recreate = function(df) {
+  new_df = separate(df, date, c('Year', 'mm-dd'), sep=4, remove=FALSE) %>%
+    separate('mm-dd', c('_', 'mm-dd'), sep=1) %>%
+    select(-'_') %>%
+    separate('mm-dd', c('Month','-dd'), sep=2) %>% 
+    separate('-dd', c('_', 'Day'), sep=1) %>%
+    select(-'_')
+
+  num_cols = c('Year','Month','Day')
+  new_df[num_cols] = sapply(new_df[num_cols], as.numeric)
+  new_df
+}
+
+new_beach = recreate(beaches_stripped)
+head(new_beach)
+```
+
+
+# Dataset 2: NFL Dataset
+
+```{r}
+nfl <- read.csv("~/DS-3001/data/nfl2008_fga.csv")
+head(nfl)
+```
+
+## Quesiton 1
+
+### Question
+
+Which kicker had the highest fg make percentage in 2008?
+
+### Psuedocode
+
+1) group_by kicker name and sum up makes, blocks, and misses
+2) mutate additional column with make %
+3) sort in descending order
+
+### Single Line Code
+
+```{r}
+
+nfl1 = group_by(nfl, name) %>%
+  summarize(GOOD = sum(GOOD == 1), BAD = sum(Missed == 1 | Blocked == 1))
+
+nfl2 = mutate(nfl1, pct = GOOD/(GOOD+BAD))
+
+nfl3 = arrange(nfl2, -pct)
+
+head(nfl3)
+
+```
+
+### Function
+
+```{r}
+
+best_kicker = function(df) {
+  group_by(df, name)%>%
+    summarize(GOOD = sum(GOOD == 1), BAD = sum(Missed == 1 | Blocked == 1))%>%
+    mutate(pct = GOOD/(GOOD+BAD))%>%
+    arrange(-pct)
+}
+
+nfl_func1 = best_kicker(nfl)
+head(nfl_func1)
+
+```
+
+## Question 2
+
+### Question
+
+How does fg attempt distance affect make percentage?
+
+### Psuedocode
+
+1) mutate column for distance10 (rounding to nearest 10)
+2) group by distance10, counting makes and misses
+3) mutate column for make %
+
+### Single Line Code
+
+```{r}
+nfl_a = mutate(nfl, distance10 = 10*round(nfl$distance/10))
+
+nfl_b = group_by(nfl_a, distance10) %>%
+  summarize(GOOD = sum(GOOD == 1), BAD = sum(Missed == 1 | Blocked == 1))
+
+nfl_c = mutate(nfl_b, pct = GOOD/(GOOD+BAD))
+
+head(nfl_c)
+```
+
+### Function
+
+```{r}
+distance_summary = function(df) {
+  mutate(df, distance10 = 10*round(nfl$distance/10)) %>%
+    group_by(distance10) %>%
+    summarize(GOOD = sum(GOOD == 1), BAD = sum(Missed == 1 | Blocked == 1)) %>%
+    mutate(pct = GOOD/(GOOD+BAD))
+}
+
+dsumm = distance_summary(nfl)
+head(dsumm)
+```

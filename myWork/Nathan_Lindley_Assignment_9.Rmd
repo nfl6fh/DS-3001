@@ -1,0 +1,163 @@
+---
+title: "Tree_Regression_Lab"
+author: "Nathan Lindley"
+date: "10/27/2022"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(MLmetrics)
+library(mltools)
+library(data.table)
+library(mice)
+library(caret)
+library(rpart.plot)
+library(ROCR)
+library(hydroGOF)
+```
+
+```{r}
+#1 Load the data and ensure the labels are correct. You are working to develop a model that can predict age.  
+url <- "http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data"
+
+names <- c("age","workclass","fnlwgt","education","education.num","marital.status","occupation","relationship","race","sex","capital.gain","capital.loss","hours.per.week","native.country", "salary")
+
+xx <- readr::read_csv(url,col_names=names)
+
+xx[xx=="?"] <- NA
+
+# View(xx)
+
+summary(xx)
+
+table(xx$workclass)
+
+histogram(xx$age,type='count', nint=30)
+```
+
+```{r}
+#2 Ensure all the variables are classified correctly including the target variable and collapse factors if still needed.
+str(xx)
+
+factor_columns <- c(2, 4, 6, 8, 9, 10, 14, 15)
+
+xx[,factor_columns] <- lapply(xx[,factor_columns], as_factor)
+str(xx)
+```
+
+```{r}
+#3 Check for missing variables and correct as needed.  
+mice::md.pattern(xx)
+df <- xx[complete.cases(xx),]
+mice::md.pattern(df)
+```
+
+```{r}
+#4 Split your data into test, tune, and train. (80/10/10)
+split_index <- createDataPartition(df$age, p=.8,
+                                   list=F,
+                                   times=1)
+
+train <- df[split_index,]
+dim(train)
+
+test <- df[-split_index,]
+dim(test)
+
+tuneTestSplit <- createDataPartition(test$age, p=.5,
+                                     list=F,
+                                     times=1)
+
+tune <- test[tuneTestSplit,]
+dim(tune)
+
+test <- test[tuneTestSplit,]
+dim(test)
+```
+
+```{r}
+#5 Build your model using the training data, rpart2, and repeated cross validation as reviewed in class with the caret package.
+fitControl <- trainControl(method = "repeatedcv",
+                          number = 10,
+                          repeats = 5) 
+
+features <- train[,-1]
+target <- train$age
+
+set.seed(1999)
+myDT <- train(x=features,
+                y=target,
+                method="rpart2",
+                trControl=fitControl,
+                metric="RMSE")
+```
+
+```{r}
+#6 View the results, comment on how the model performed and which variables appear to be contributing the most (variable importance)  
+myDT
+plot(myDT)
+varImp(myDT)
+# The varImp function shows that relationship is the most important variable for predicting age, followed by marital status which makes sense since marital status generally changes around the same age for most people
+```
+
+```{r}
+#7 Plot the output of the model to see the tree visually, using rpart.plot, is there anything you notice that might be a concern? 
+rpart.plot(myDT$finalModel, type=5, extra=101)
+# The only thing I notice that may be a concern is how few of the variables are actually used in this tree. In total there are only three of the feature variables that actually end up being used
+```
+
+```{r}
+#8 Use the tune set and the predict function with your model to make predicts for the target variable.
+df_pred <- predict(myDT$finalModel, tune)
+df_pred
+```
+
+```{r}
+#9 Use the postResample function to get your evaluation metrics. Also calculate NRMSE using the range (max-min) for the target variable. Explain what all these measures mean in terms of your models predictive power.  
+postResample(df_pred, tune$age)
+nrmse(df_pred, tune$age)
+# RMSE is root mean squared error which, similar to log-loss will penalize the model more for more wrong predictions
+# Rsquared is the determination coefficient which means it measures how closely correlated the results are
+# MAE is mean absolute error which is another method for determining how accurate the model is based on the total difference between predicted and actual values divided by the number of observations
+```
+
+```{r}
+#10 Based on your understanding of the model and data adjust the hyper-parameter via the built in train control function in caret or build and try new features, does the model quality improve or not? If so how and why, if not, why not?
+tree.grid <- expand.grid(maxdepth=c(3:20))
+
+myDT1 <- train(x=features,
+                y=target,
+                method="rpart2",
+                trControl=fitControl,
+                tuneGrid=tree.grid,
+                metric="RMSE")
+```
+
+```{r}
+#11 Once you are confident that your model is not improving, via changes implemented on the training set and evaluated on the the tune set, predict with the test set and report final evaluation of the model. Discuss the output in comparison with the previous evaluations.  
+df_test <- predict(myDT1$finalModel, test)
+head(df_test)
+postResample(df_test, test$age)
+
+# all values are pretty similar, it seems that anything past a max depth of 4 doesn't change any of these three statistics
+```
+
+```{r}
+#12 Summarize what you learned along the way and make recommendations on how this could be used moving forward, being careful not to over promise. 
+
+# This would definitely benefit from more comprehensive data including more detailed salary information, categories of job (i.e. Jr, Sr...) because that could definitely make this model more accurate.
+```
+
+```{r}
+#13 What was the most interesting or hardest part of this process and what questions do you still have? 
+
+# For me the hardest part of any ML assignment is always getting the data into a clean state where I will be able to build a somewhat decent model on top of it. This data was pretty clean to begin with so it wasn't the worst here, but there is definitely more that could've been done if I had the know how to do it wrt cleaning the data.
+```

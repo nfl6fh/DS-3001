@@ -1,0 +1,36 @@
+---
+title: 'Assignment II'
+author: 'Nathan Lindley'
+date: '9/8/2022'
+output:
+    html_document: 
+      theme: paper
+      toc: yes
+      toc_float: yes
+editor_options:
+    chunk_output_type: inline
+---
+
+```{r setup, include=FALSE, cache=TRUE}
+knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE)
+```
+
+```{r libraries, include=FALSE}
+library(tidyverse)
+library(dplyr)
+```
+
+# My Article
+
+[Link to article]('https://hbr.org/2019/01/data-science-and-the-art-of-persuasion')
+
+## Article Summary
+
+This article primarily focuses on the loss of information between data scientists
+and the decision makers at many companies. This effect exists even at companies 
+that have poured a considerable amount of resources into their data analysis 
+efforts. 
+
+## Companies Mentioned in the Article
+
+

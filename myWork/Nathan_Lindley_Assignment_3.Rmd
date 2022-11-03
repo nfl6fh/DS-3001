@@ -1,0 +1,64 @@
+---
+title: "Assignment 3"
+author: "Nathan Lindley"
+date: "9/22/2022"
+output:
+  html_document:
+    toc: TRUE
+    theme: journal
+    toc_float: TRUE
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(psych)
+library(mltools)
+library(data.table)
+library(caret)
+```
+
+# Read in data
+
+```{r, warning=FALSE, message=FALSE}
+cc = read_csv("~/DS-3001/myWork/cc_institution_details.csv")
+pd = read_csv("~/DS-3001/myWork/Placement_Data_Full_Class.csv")
+```
+
+# College Completion Dataset
+
+## Question
+
+What factors influence graduation within four years?
+
+## Business Metric
+
+Improvement of financial stability.
+
+## Data Prep
+
+```{r}
+column_index <- tibble(colnames(cc))
+# column_index
+
+cc$hbcu = ifelse(cc$hbcu == 'X', 1, 0)
+cc$flagship = ifelse(cc$flagship == 'X', 1, 0)
+
+# cc[,c(6,7,)] = lapply(cc[,c(6,7,)], as.factor)
+
+# removing columns with too many null values
+keep = (sapply(cc, function(x) mean(x=='NULL'))<0.5)
+for (loc in seq(0,length(keep))) {
+  print(loc)
+  if (keep[loc] & is.na(keep[loc])) {
+    print(loc)
+    loc = FALSE
+  }
+}
+cc1 = cc[keep]
+```
